@@ -50,6 +50,8 @@ def init_state():
         st.session_state.rgba_frames = None
     if "fps" not in st.session_state:
         st.session_state.fps = 12
+    if "speed_mult" not in st.session_state:
+        st.session_state.speed_mult = 1.0
 
 
 init_state()
@@ -318,6 +320,14 @@ with col_right:
             help=t("trim_section_help")
         )
 
+        speed_multiplier = st.select_slider(
+            t("speed_slider_label"),
+            options=[0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0],
+            value=1.0,
+            format_func=lambda s: f"{s:.2f}x" if s != int(s) else f"{int(s)}.0x" if s == 1.0 or s == 2.0 or s == 3.0 else f"{s}x",
+            help=t("speed_slider_help")
+        )
+
         sliced_frames, start_idx, end_idx = slice_frames_by_seconds(
             st.session_state.rgba_frames,
             fps=fps,
@@ -325,25 +335,44 @@ with col_right:
             end_sec=trim_range[1]
         )
 
-        sliced_duration = len(sliced_frames) / float(fps)
-        st.info(t("trim_stats", start=trim_range[0], end=trim_range[1], duration=sliced_duration, frames=len(sliced_frames)))
+        effective_fps = max(1.0, fps * speed_multiplier)
+        sliced_duration = len(sliced_frames) / float(effective_fps)
+        st.info(t("trim_stats", start=trim_range[0], end=trim_range[1], duration=sliced_duration, frames=len(sliced_frames), speed=speed_multiplier))
 
         is_full_range = (len(sliced_frames) == len(st.session_state.rgba_frames)) and (start_idx == 0)
 
+        # Sprite sheet depends only on sliced frames (speed does not alter static sprite sheet images)
         if is_full_range:
-            active_gif_bytes = st.session_state.gif_bytes
             active_sheet_bytes = st.session_state.sheet_bytes
         else:
-            cache_key = f"trim_{start_idx}_{end_idx}_{len(sliced_frames)}"
-            if st.session_state.get("cached_trim_key") != cache_key:
-                trimmed_gif = compile_transparent_gif(sliced_frames, fps=fps)
+            sheet_cache_key = f"sheet_{start_idx}_{end_idx}_{len(sliced_frames)}"
+            if st.session_state.get("cached_sheet_key") != sheet_cache_key:
                 trimmed_sheet, _ = compile_sprite_sheet(sliced_frames, layout="horizontal")
-                st.session_state["cached_trim_key"] = cache_key
-                st.session_state["cached_trimmed_gif"] = trimmed_gif
+                st.session_state["cached_sheet_key"] = sheet_cache_key
                 st.session_state["cached_trimmed_sheet"] = trimmed_sheet
-
-            active_gif_bytes = st.session_state["cached_trimmed_gif"]
             active_sheet_bytes = st.session_state["cached_trimmed_sheet"]
+
+        # GIF depends on sliced frames AND speed_multiplier
+        gif_cache_key = f"gif_{start_idx}_{end_idx}_{len(sliced_frames)}_{speed_multiplier}_{fps}"
+        if is_full_range and speed_multiplier == 1.0:
+            active_gif_bytes = st.session_state.gif_bytes
+        else:
+            if st.session_state.get("cached_trim_key") != gif_cache_key:
+                trimmed_gif = compile_transparent_gif(sliced_frames, fps=fps, speed_multiplier=speed_multiplier)
+                st.session_state["cached_trim_key"] = gif_cache_key
+                st.session_state["cached_trimmed_gif"] = trimmed_gif
+            active_gif_bytes = st.session_state["cached_trimmed_gif"]
+
+        # Also compile full gif if speed_multiplier changed and someone looks at tab_orig
+        full_gif_cache_key = f"full_gif_{len(st.session_state.rgba_frames)}_{speed_multiplier}_{fps}"
+        if speed_multiplier == 1.0:
+            active_full_gif_bytes = st.session_state.gif_bytes
+        else:
+            if st.session_state.get("cached_full_gif_key") != full_gif_cache_key:
+                full_speed_gif = compile_transparent_gif(st.session_state.rgba_frames, fps=fps, speed_multiplier=speed_multiplier)
+                st.session_state["cached_full_gif_key"] = full_gif_cache_key
+                st.session_state["cached_full_speed_gif"] = full_speed_gif
+            active_full_gif_bytes = st.session_state["cached_full_speed_gif"]
 
         tab_trim, tab_orig = st.tabs([t("tab_trimmed"), t("tab_full")])
 
@@ -363,11 +392,12 @@ with col_right:
             </div>
             """, unsafe_allow_html=True)
 
+            speed_tag = f"_{speed_multiplier:.2f}x" if speed_multiplier != 1.0 else ""
             if is_full_range:
                 st.download_button(
                     label=t("btn_download_gif"),
                     data=active_gif_bytes,
-                    file_name="sprite_animacao_transparente.gif",
+                    file_name=f"sprite_animacao_transparente{speed_tag}.gif",
                     mime="image/gif",
                     use_container_width=True
                 )
@@ -383,7 +413,7 @@ with col_right:
                 st.download_button(
                     label=t("btn_download_trimmed_gif", start=trim_range[0], end=trim_range[1]),
                     data=active_gif_bytes,
-                    file_name=f"sprite_recortado_{trim_range[0]:.2f}s_a_{trim_range[1]:.2f}s.gif",
+                    file_name=f"sprite_recortado_{trim_range[0]:.2f}s_a_{trim_range[1]:.2f}s{speed_tag}.gif",
                     mime="image/gif",
                     use_container_width=True
                 )
@@ -398,7 +428,7 @@ with col_right:
 
         with tab_orig:
             st.markdown(f"<b>{t('preview_title')}</b>", unsafe_allow_html=True)
-            b64_full_gif = base64.b64encode(st.session_state.gif_bytes).decode("utf-8")
+            b64_full_gif = base64.b64encode(active_full_gif_bytes).decode("utf-8")
             st.markdown(f"""
             <div class="checkerboard-viewport">
                 <div class="viewport-header">
@@ -412,10 +442,11 @@ with col_right:
             </div>
             """, unsafe_allow_html=True)
 
+            orig_duration = len(st.session_state.rgba_frames) / float(effective_fps)
             st.download_button(
-                label=t("btn_download_full_gif", duration=total_duration),
-                data=st.session_state.gif_bytes,
-                file_name="sprite_animacao_completa.gif",
+                label=t("btn_download_full_gif", duration=orig_duration),
+                data=active_full_gif_bytes,
+                file_name=f"sprite_animacao_completa{speed_tag}.gif",
                 mime="image/gif",
                 use_container_width=True
             )

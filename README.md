@@ -21,6 +21,7 @@
   - Alpha cutoff sensitivity slider.
   - Auto-crop bounding box to keep the character centered without blank margins.
 - ✂️ **Recorte Temporal Pós-Transparência (Download por Segundos)**: Escolha os segundos exatos de início e fim para recortar e baixar o GIF transparente instantaneamente, sem precisar reprocessar a IA.
+- ⚡ **Acelerador de Velocidade (Playback Speed)**: Controle a velocidade de reprodução do GIF (0.5x, 1.0x, 1.5x, 2.0x, 3.0x etc.) com recálculo instantâneo sem necessidade de rodar a IA novamente.
 - 📁 **Suporte a Vídeos e GIFs**: Aceita formatos MP4, WebM, MOV, AVI e também `.gif` pré-existentes.
 - 🏁 **Checkerboard Live Preview**: Live base64-rendered preview on a cyber checkerboard canvas to inspect transparency before downloading.
 

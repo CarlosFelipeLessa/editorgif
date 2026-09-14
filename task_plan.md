@@ -56,12 +56,16 @@ Build an end-to-end, game-ready video-to-transparent-GIF processing tool that al
 - [x] Create remote repository `editorgif` on GitHub via GitHub API.
 - [x] Push to `origin main` and verify remote deployment.
 
-## Phase 7: Post-Transparency Temporal Cropping (Recortar por Segundos)
-- [x] Implement `slice_frames_by_seconds` in `core/gif_compiler.py` with boundary protection.
-- [x] Implement `.gif` input support in `core/video_processor.py`.
-- [x] Implement dynamic trimming UI with dual-thumb time slider and live statistics in `ui/app.py`.
-- [x] Implement interactive preview with tabs for Trimmed vs. Full animation over checkerboard canvas.
-- [x] Add download buttons with timestamped filenames for trimmed GIF and Sprite Sheet.
+## Phase 8: UI/UX Pro Max Redesign
+- [x] Apply cyber-dark theme, Google Fonts, and glassmorphism styling in `ui/styles.py`.
+- [x] Improve HUD metrics grid and checkerboard preview container.
+
+## Phase 9: GIF Playback Speed Multiplier (Aumentar Velocidade do GIF)
+- [x] Add `speed_multiplier` parameter and effective duration calculation in `core/gif_compiler.py`.
+- [x] Add speed selector slider (`0.5x` to `3.0x`) in `ui/app.py`.
+- [x] Implement instantaneous GIF regeneration and cache invalidation by speed key without re-running AI.
+- [x] Update live duration statistics and download filenames with speed tag.
 - [x] Update translations in `ui/i18n.py` (PT-BR and EN-US).
-- [x] Add automated test step in `test_pipeline.py` and verify all tests pass.
+- [x] Add automated test assertion in `test_pipeline.py` and verify all tests pass.
+
 

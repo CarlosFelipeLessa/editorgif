@@ -103,15 +103,17 @@ def _convert_rgba_to_transparent_palette(frame: Image.Image) -> Image.Image:
 def compile_transparent_gif(
     frames: List[Image.Image],
     fps: int = 12,
-    loop: int = 0
+    loop: int = 0,
+    speed_multiplier: float = 1.0
 ) -> bytes:
     """
     Compiles a list of RGBA frames into an animated GIF with transparent background.
 
     Args:
         frames: List of RGBA PIL images.
-        fps: Playback frames per second.
+        fps: Base playback frames per second.
         loop: Loop count (0 = infinite loop).
+        speed_multiplier: Playback speed multiplier (e.g., 1.5 for 1.5x speed, 2.0 for 2x speed).
 
     Returns:
         Bytes buffer containing the compiled GIF file.
@@ -119,7 +121,9 @@ def compile_transparent_gif(
     if not frames:
         raise ValueError("Frames list cannot be empty.")
 
-    duration_ms = max(20, int(round(1000.0 / fps)))
+    speed_multiplier = max(0.1, float(speed_multiplier))
+    effective_fps = max(1.0, fps * speed_multiplier)
+    duration_ms = max(20, int(round(1000.0 / effective_fps)))
 
     paletted_frames = [_convert_rgba_to_transparent_palette(f) for f in frames]
 

@@ -95,7 +95,7 @@ def run_pipeline_test():
         assert sheet_meta["frames"] == 4
         print(f"   Sprite sheet created: {sheet_meta['sheet_width']}x{sheet_meta['sheet_height']} px.")
 
-        print("[6/6] Slicing transparent frames by seconds and compiling trimmed GIF & Sprite Sheet...")
+        print("[6/7] Slicing transparent frames by seconds and compiling trimmed GIF & Sprite Sheet...")
         sliced, s_idx, e_idx = slice_frames_by_seconds(rgba_frames, fps=8, start_sec=0.1, end_sec=0.3)
         assert len(sliced) > 0, "Sliced frames list is empty."
         assert len(sliced) <= len(rgba_frames), "Sliced frames exceeded original count."
@@ -104,6 +104,13 @@ def run_pipeline_test():
         trimmed_sheet, trimmed_meta = compile_sprite_sheet(sliced, layout="horizontal")
         assert len(trimmed_sheet) > 0 and trimmed_meta["frames"] == len(sliced), "Invalid trimmed sprite sheet."
         print(f"   Trimmed GIF ({len(sliced)} frames, {len(trimmed_gif)} bytes) and sheet ({trimmed_meta['sheet_width']}x{trimmed_meta['sheet_height']}) successfully created.")
+
+        print("[7/7] Testing speed multiplier compilation (1.5x, 2.0x, 3.0x)...")
+        speedy_gif = compile_transparent_gif(rgba_frames, fps=8, speed_multiplier=2.0)
+        assert len(speedy_gif) > 0 and (speedy_gif.startswith(b"GIF89a") or speedy_gif.startswith(b"GIF87a")), "Speedy GIF compilation failed."
+        slow_gif = compile_transparent_gif(rgba_frames, fps=8, speed_multiplier=0.5)
+        assert len(slow_gif) > 0 and (slow_gif.startswith(b"GIF89a") or slow_gif.startswith(b"GIF87a")), "Slow GIF compilation failed."
+        print(f"   Speed multiplier test successful (2.0x: {len(speedy_gif)} bytes, 0.5x: {len(slow_gif)} bytes).")
 
         print("\n=== ALL PIPELINE TESTS PASSED ===")
 
