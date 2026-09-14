@@ -11,7 +11,12 @@ from PIL import Image
 
 from core.video_processor import extract_frames, get_video_metadata
 from core.bg_remover import get_rembg_session, process_frames_pipeline
-from core.gif_compiler import compile_transparent_gif, compile_sprite_sheet, slice_frames_by_seconds
+from core.gif_compiler import (
+    compile_transparent_gif,
+    compile_sprite_sheet,
+    slice_frames_by_seconds,
+    slice_sprite_sheet
+)
 
 
 def generate_synthetic_video(output_path: str, width: int = 160, height: int = 160, fps: int = 10, num_frames: int = 12):
@@ -105,12 +110,22 @@ def run_pipeline_test():
         assert len(trimmed_sheet) > 0 and trimmed_meta["frames"] == len(sliced), "Invalid trimmed sprite sheet."
         print(f"   Trimmed GIF ({len(sliced)} frames, {len(trimmed_gif)} bytes) and sheet ({trimmed_meta['sheet_width']}x{trimmed_meta['sheet_height']}) successfully created.")
 
-        print("[7/7] Testing speed multiplier compilation (1.5x, 2.0x, 3.0x)...")
+        print("[7/8] Testing speed multiplier compilation (1.5x, 2.0x, 3.0x)...")
         speedy_gif = compile_transparent_gif(rgba_frames, fps=8, speed_multiplier=2.0)
         assert len(speedy_gif) > 0 and (speedy_gif.startswith(b"GIF89a") or speedy_gif.startswith(b"GIF87a")), "Speedy GIF compilation failed."
         slow_gif = compile_transparent_gif(rgba_frames, fps=8, speed_multiplier=0.5)
         assert len(slow_gif) > 0 and (slow_gif.startswith(b"GIF89a") or slow_gif.startswith(b"GIF87a")), "Slow GIF compilation failed."
         print(f"   Speed multiplier test successful (2.0x: {len(speedy_gif)} bytes, 0.5x: {len(slow_gif)} bytes).")
+
+        print("[8/8] Testing Sprite Sheet to GIF slicing and compilation...")
+        import io
+        sheet_image = Image.open(io.BytesIO(sheet_bytes))
+        sheet_slices = slice_sprite_sheet(sheet_image, columns=sheet_meta["columns"], rows=sheet_meta["rows"])
+        assert len(sheet_slices) == sheet_meta["frames"], f"Expected {sheet_meta['frames']} slices, got {len(sheet_slices)}"
+        assert sheet_slices[0].size == (sheet_meta["frame_width"], sheet_meta["frame_height"])
+        sheet_gif = compile_transparent_gif(sheet_slices, fps=12)
+        assert len(sheet_gif) > 0 and (sheet_gif.startswith(b"GIF89a") or sheet_gif.startswith(b"GIF87a"))
+        print(f"   Sprite Sheet to GIF test successful: {len(sheet_slices)} frames sliced -> {len(sheet_gif)} bytes GIF.")
 
         print("\n=== ALL PIPELINE TESTS PASSED ===")
 

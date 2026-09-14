@@ -236,3 +236,61 @@ def compile_animated_webp(
 
     buffer.seek(0)
     return buffer.getvalue()
+
+
+def slice_sprite_sheet(
+    sheet_image: Image.Image,
+    columns: int = 1,
+    rows: int = 1,
+    total_frames: Optional[int] = None
+) -> List[Image.Image]:
+    """
+    Slices a sprite sheet (grid or horizontal strip) into a sequence of PIL RGBA frame images.
+
+    Args:
+        sheet_image: PIL Image containing the sprite sheet.
+        columns: Number of horizontal columns/cells.
+        rows: Number of vertical rows.
+        total_frames: Optional maximum frame limit (useful if last row is incomplete).
+
+    Returns:
+        List of individual PIL RGBA frame images.
+    """
+    if sheet_image.mode != "RGBA":
+        sheet_image = sheet_image.convert("RGBA")
+
+    sheet_w, sheet_h = sheet_image.size
+    cols = max(1, int(columns))
+    rws = max(1, int(rows))
+
+    frame_w = sheet_w // cols
+    frame_h = sheet_h // rws
+
+    if frame_w <= 0 or frame_h <= 0:
+        raise ValueError(f"Invalid dimensions: sheet size {sheet_w}x{sheet_h} cannot be split into {cols}x{rws}.")
+
+    max_possible = cols * rws
+    limit = min(max_possible, total_frames) if total_frames and total_frames > 0 else max_possible
+
+    frames: List[Image.Image] = []
+    count = 0
+
+    for r in range(rws):
+        for c in range(cols):
+            if count >= limit:
+                break
+            left = c * frame_w
+            upper = r * frame_h
+            right = left + frame_w
+            lower = upper + frame_h
+            frame = sheet_image.crop((left, upper, right, lower))
+            frames.append(frame)
+            count += 1
+        if count >= limit:
+            break
+
+    if not frames:
+        raise ValueError("No frames could be extracted from sprite sheet.")
+
+    return frames
+

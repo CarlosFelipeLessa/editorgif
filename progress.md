@@ -12,6 +12,7 @@
 | 2026-09-14 | Phase 7 | Completed | Added post-transparency temporal cropping (recortar GIF por segundos). Implemented `slice_frames_by_seconds`, `.gif` file ingestion, dual-thumb time slider, tabs for trimmed and full preview on checkerboard, and timestamped download buttons. Verified via `test_pipeline.py`. |
 | 2026-09-14 | Phase 8 | Completed | Elevated UI/UX design via `ui-ux-pro-max` skill. Implemented Google Fonts (Outfit, Plus Jakarta Sans, JetBrains Mono), cyber-dark atmosphere, glassmorphism cards, HUD stats grid, viewport container frame, and tactile button micro-interactions without modifying any functional logic. |
 | 2026-09-14 | Phase 9 | Completed | Added GIF playback speed multiplier (0.5x to 3.0x) in `core/gif_compiler.py` and `ui/app.py`. Enables instant speed acceleration without re-running AI. Updated i18n, test suite, and README. All tests passing. |
+| 2026-09-14 | Phase 10 | Completed | Added Sprite Sheet input support (PNG/WebP). Implemented `slice_sprite_sheet` in `core/gif_compiler.py`, input mode toggle (Video vs Sprite Sheet), custom grid/strip slicing, instant GIF compilation, test coverage, and documentation. |
 
 
 

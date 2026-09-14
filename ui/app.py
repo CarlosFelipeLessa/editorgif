@@ -13,9 +13,15 @@ import streamlit as st
 # Add workspace root to sys.path so core modules can be imported
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from PIL import Image
 from core.video_processor import extract_frames, get_video_metadata
 from core.bg_remover import get_rembg_session, process_frames_pipeline
-from core.gif_compiler import compile_transparent_gif, compile_sprite_sheet, slice_frames_by_seconds
+from core.gif_compiler import (
+    compile_transparent_gif,
+    compile_sprite_sheet,
+    slice_frames_by_seconds,
+    slice_sprite_sheet
+)
 from ui.styles import CUSTOM_CSS
 from ui.i18n import get_text
 
@@ -108,168 +114,327 @@ with col_left:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.subheader(t("step_1_title"))
     
-    uploaded_file = st.file_uploader(
-        t("upload_label"),
-        type=["mp4", "webm", "mov", "avi", "gif"],
-        help=t("upload_help")
+    input_mode = st.radio(
+        t("input_mode_label"),
+        options=["video", "sheet"],
+        format_func=lambda x: t("input_mode_video") if x == "video" else t("input_mode_sheet"),
+        horizontal=True,
+        key="input_media_mode"
     )
 
-    if uploaded_file:
-        # Reset output if new file uploaded
-        if st.session_state.last_processed_file != uploaded_file.name:
-            st.session_state.gif_bytes = None
-            st.session_state.sheet_bytes = None
-            st.session_state.sheet_meta = None
-            st.session_state.rgba_frames = None
-            st.session_state.pop("cached_trim_key", None)
-            st.session_state.pop("cached_trimmed_gif", None)
-            st.session_state.pop("cached_trimmed_sheet", None)
-            st.session_state.last_processed_file = uploaded_file.name
+    if input_mode == "video":
+        uploaded_file = st.file_uploader(
+            t("upload_label"),
+            type=["mp4", "webm", "mov", "avi", "gif"],
+            help=t("upload_help"),
+            key="file_uploader_video"
+        )
 
-        # Save to temp file for OpenCV/PIL reading
-        tfile = tempfile.NamedTemporaryFile(delete=False, suffix=f"_{uploaded_file.name}")
-        tfile.write(uploaded_file.read())
-        tfile.flush()
-        temp_path = tfile.name
+        if uploaded_file:
+            # Reset output if new file uploaded
+            if st.session_state.last_processed_file != uploaded_file.name:
+                st.session_state.gif_bytes = None
+                st.session_state.sheet_bytes = None
+                st.session_state.sheet_meta = None
+                st.session_state.rgba_frames = None
+                st.session_state.pop("cached_trim_key", None)
+                st.session_state.pop("cached_trimmed_gif", None)
+                st.session_state.pop("cached_trimmed_sheet", None)
+                st.session_state.last_processed_file = uploaded_file.name
 
-        try:
-            meta = get_video_metadata(temp_path)
-            
-            # Show original video or animated GIF player
-            if uploaded_file.name.lower().endswith(".gif"):
-                st.image(temp_path)
-            else:
-                st.video(temp_path)
+            # Save to temp file for OpenCV/PIL reading
+            tfile = tempfile.NamedTemporaryFile(delete=False, suffix=f"_{uploaded_file.name}")
+            tfile.write(uploaded_file.read())
+            tfile.flush()
+            temp_path = tfile.name
 
-            st.caption(
-                t("video_caption", width=meta.width, height=meta.height, duration=meta.duration_seconds, fps=meta.fps)
-            )
-
-            st.divider()
-            st.subheader(t("step_2_title"))
-
-            # Time Interval Trimming
-            max_dur = max(0.1, float(meta.duration_seconds))
-            default_end = min(max_dur, 3.0)
-            time_range = st.slider(
-                t("time_slider_label"),
-                min_value=0.0,
-                max_value=max_dur,
-                value=(0.0, default_end),
-                step=0.05,
-                help=t("time_slider_help")
-            )
-
-            # Target Game FPS
-            target_fps = st.select_slider(
-                t("target_fps_label"),
-                options=[6, 8, 10, 12, 15, 20, 24, 30],
-                value=12,
-                help=t("target_fps_help")
-            )
-
-            # Resolution Scale
-            scale_percent = st.slider(
-                t("scale_slider_label"),
-                min_value=20,
-                max_value=100,
-                value=50,
-                step=5,
-                help=t("scale_slider_help")
-            )
-
-            # Advanced Settings Accordion
-            with st.expander(t("advanced_title"), expanded=False):
-                model_name = st.selectbox(
-                    t("model_label"),
-                    options=["u2net", "isnet-general-use", "silueta", "birefnet-general"],
-                    index=0,
-                    help=t("model_help")
-                )
-                alpha_threshold = st.slider(
-                    t("alpha_threshold_label"),
-                    min_value=1,
-                    max_value=250,
-                    value=30,
-                    help=t("alpha_threshold_help")
-                )
-                defringe = st.checkbox(
-                    t("defringe_label"),
-                    value=True,
-                    help=t("defringe_help")
-                )
-                auto_crop = st.checkbox(
-                    t("autocrop_label"),
-                    value=False,
-                    help=t("autocrop_help")
-                )
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            process_btn = st.button(t("process_button"), use_container_width=True)
-
-            if process_btn:
-                prog_bar = st.progress(0, text=t("prog_extract"))
+            try:
+                meta = get_video_metadata(temp_path)
                 
-                try:
-                    # 1. Extraction
-                    frames = extract_frames(
-                        video_path=temp_path,
-                        start_time=time_range[0],
-                        end_time=time_range[1],
-                        target_fps=target_fps,
-                        scale_percent=scale_percent
+                # Show original video or animated GIF player
+                if uploaded_file.name.lower().endswith(".gif"):
+                    st.image(temp_path)
+                else:
+                    st.video(temp_path)
+
+                st.caption(
+                    t("video_caption", width=meta.width, height=meta.height, duration=meta.duration_seconds, fps=meta.fps)
+                )
+
+                st.divider()
+                st.subheader(t("step_2_title"))
+
+                # Time Interval Trimming
+                max_dur = max(0.1, float(meta.duration_seconds))
+                default_end = min(max_dur, 3.0)
+                time_range = st.slider(
+                    t("time_slider_label"),
+                    min_value=0.0,
+                    max_value=max_dur,
+                    value=(0.0, default_end),
+                    step=0.05,
+                    help=t("time_slider_help")
+                )
+
+                # Target Game FPS
+                target_fps = st.select_slider(
+                    t("target_fps_label"),
+                    options=[6, 8, 10, 12, 15, 20, 24, 30],
+                    value=12,
+                    help=t("target_fps_help")
+                )
+
+                # Resolution Scale
+                scale_percent = st.slider(
+                    t("scale_slider_label"),
+                    min_value=20,
+                    max_value=100,
+                    value=50,
+                    step=5,
+                    help=t("scale_slider_help")
+                )
+
+                # Advanced Settings Accordion
+                with st.expander(t("advanced_title"), expanded=False):
+                    model_name = st.selectbox(
+                        t("model_label"),
+                        options=["u2net", "isnet-general-use", "silueta", "birefnet-general"],
+                        index=0,
+                        help=t("model_help")
                     )
+                    alpha_threshold = st.slider(
+                        t("alpha_threshold_label"),
+                        min_value=1,
+                        max_value=250,
+                        value=30,
+                        help=t("alpha_threshold_help")
+                    )
+                    defringe = st.checkbox(
+                        t("defringe_label"),
+                        value=True,
+                        help=t("defringe_help")
+                    )
+                    auto_crop = st.checkbox(
+                        t("autocrop_label"),
+                        value=False,
+                        help=t("autocrop_help")
+                    )
+
+                st.markdown("<br>", unsafe_allow_html=True)
+                process_btn = st.button(t("process_button"), use_container_width=True)
+
+                if process_btn:
+                    prog_bar = st.progress(0, text=t("prog_extract"))
                     
-                    prog_bar.progress(20, text=t("prog_extracted", count=len(frames), model=model_name))
-                    session = get_rembg_session(model_name)
-
-                    # 2. AI Background Removal
-                    def update_progress(current, total, msg):
-                        percent = 20 + int((current / total) * 60)
-                        prog_bar.progress(percent, text=t("prog_segment", current=current, total=total))
-
-                    rgba_frames = process_frames_pipeline(
-                        frames=frames,
-                        session=session,
-                        alpha_threshold=alpha_threshold,
-                        defringe=defringe,
-                        auto_crop=auto_crop,
-                        progress_callback=update_progress
-                    )
-
-                    # 3. Compile GIF
-                    prog_bar.progress(85, text=t("prog_gif"))
-                    gif_bytes = compile_transparent_gif(rgba_frames, fps=target_fps)
-
-                    # 4. Compile Sprite Sheet
-                    prog_bar.progress(95, text=t("prog_sheet"))
-                    sheet_bytes, sheet_meta = compile_sprite_sheet(rgba_frames, layout="horizontal")
-
-                    prog_bar.progress(100, text=t("prog_done"))
-
-                    # Store in session state
-                    st.session_state.gif_bytes = gif_bytes
-                    st.session_state.sheet_bytes = sheet_bytes
-                    st.session_state.sheet_meta = sheet_meta
-                    st.session_state.frames_count = len(rgba_frames)
-                    st.session_state.dimensions = rgba_frames[0].size
-                    st.session_state.rgba_frames = rgba_frames
-                    st.session_state.fps = target_fps
-                    st.session_state.pop("cached_trim_key", None)
-                    st.session_state.pop("cached_trimmed_gif", None)
-                    st.session_state.pop("cached_trimmed_sheet", None)
-                    st.toast(t("toast_success"), icon="✅")
-
-                except Exception as e:
-                    st.error(t("error_processing", error=str(e)))
-                finally:
                     try:
-                        os.remove(temp_path)
-                    except Exception:
-                        pass
+                        # 1. Extraction
+                        frames = extract_frames(
+                            video_path=temp_path,
+                            start_time=time_range[0],
+                            end_time=time_range[1],
+                            target_fps=target_fps,
+                            scale_percent=scale_percent
+                        )
+                        
+                        prog_bar.progress(20, text=t("prog_extracted", count=len(frames), model=model_name))
+                        session = get_rembg_session(model_name)
 
-        except Exception as e:
-            st.error(t("error_reading", error=str(e)))
+                        # 2. AI Background Removal
+                        def update_progress(current, total, msg):
+                            percent = 20 + int((current / total) * 60)
+                            prog_bar.progress(percent, text=t("prog_segment", current=current, total=total))
+
+                        rgba_frames = process_frames_pipeline(
+                            frames=frames,
+                            session=session,
+                            alpha_threshold=alpha_threshold,
+                            defringe=defringe,
+                            auto_crop=auto_crop,
+                            progress_callback=update_progress
+                        )
+
+                        # 3. Compile GIF
+                        prog_bar.progress(85, text=t("prog_gif"))
+                        gif_bytes = compile_transparent_gif(rgba_frames, fps=target_fps)
+
+                        # 4. Compile Sprite Sheet
+                        prog_bar.progress(95, text=t("prog_sheet"))
+                        sheet_bytes, sheet_meta = compile_sprite_sheet(rgba_frames, layout="horizontal")
+
+                        prog_bar.progress(100, text=t("prog_done"))
+
+                        # Store in session state
+                        st.session_state.gif_bytes = gif_bytes
+                        st.session_state.sheet_bytes = sheet_bytes
+                        st.session_state.sheet_meta = sheet_meta
+                        st.session_state.frames_count = len(rgba_frames)
+                        st.session_state.dimensions = rgba_frames[0].size
+                        st.session_state.rgba_frames = rgba_frames
+                        st.session_state.fps = target_fps
+                        st.session_state.pop("cached_trim_key", None)
+                        st.session_state.pop("cached_trimmed_gif", None)
+                        st.session_state.pop("cached_trimmed_sheet", None)
+                        st.toast(t("toast_success"), icon="✅")
+
+                    except Exception as e:
+                        st.error(t("error_processing", error=str(e)))
+                    finally:
+                        try:
+                            os.remove(temp_path)
+                        except Exception:
+                            pass
+
+            except Exception as e:
+                st.error(t("error_reading", error=str(e)))
+
+    else:
+        # Sprite Sheet Input Mode
+        uploaded_sheet = st.file_uploader(
+            t("upload_sheet_label"),
+            type=["png", "webp", "jpg", "jpeg"],
+            help=t("upload_sheet_help"),
+            key="file_uploader_sheet"
+        )
+
+        if uploaded_sheet:
+            if st.session_state.last_processed_file != uploaded_sheet.name:
+                st.session_state.gif_bytes = None
+                st.session_state.sheet_bytes = None
+                st.session_state.sheet_meta = None
+                st.session_state.rgba_frames = None
+                st.session_state.pop("cached_trim_key", None)
+                st.session_state.pop("cached_trimmed_gif", None)
+                st.session_state.pop("cached_trimmed_sheet", None)
+                st.session_state.last_processed_file = uploaded_sheet.name
+
+            try:
+                sheet_pil = Image.open(uploaded_sheet)
+                sheet_w, sheet_h = sheet_pil.size
+                has_alpha = "Sim / Yes (RGBA)" if sheet_pil.mode == "RGBA" else "Não / No (RGB)"
+
+                # Preview the loaded sprite sheet
+                st.image(sheet_pil, caption=t("sheet_caption", width=sheet_w, height=sheet_h, alpha=has_alpha), use_container_width=True)
+
+                st.divider()
+                st.subheader(t("step_2_title"))
+
+                sheet_layout = st.radio(
+                    t("sheet_layout_label"),
+                    options=["horizontal", "grid"],
+                    format_func=lambda x: t("sheet_layout_horizontal") if x == "horizontal" else t("sheet_layout_grid"),
+                    horizontal=True
+                )
+
+                if sheet_layout == "horizontal":
+                    cols = st.number_input(t("sheet_frames_count_label"), min_value=1, max_value=128, value=max(1, sheet_w // sheet_h if sheet_h > 0 else 4), step=1)
+                    rows = 1
+                else:
+                    col_c1, col_c2 = st.columns(2)
+                    with col_c1:
+                        cols = st.number_input(t("sheet_cols_label"), min_value=1, max_value=64, value=4, step=1)
+                    with col_c2:
+                        rows = st.number_input(t("sheet_rows_label"), min_value=1, max_value=64, value=1, step=1)
+
+                calc_frame_w = sheet_w // cols
+                calc_frame_h = sheet_h // rows
+                total_quadros = cols * rows
+
+                st.caption(t("sheet_frame_calc", w=calc_frame_w, h=calc_frame_h, count=total_quadros))
+
+                # Playback FPS
+                sheet_fps = st.select_slider(
+                    t("target_fps_label"),
+                    options=[6, 8, 10, 12, 15, 20, 24, 30],
+                    value=12,
+                    help=t("target_fps_help")
+                )
+
+                # Optional AI Background Removal for Sprite Sheet
+                apply_ai = st.checkbox(
+                    t("sheet_ai_bg_label"),
+                    value=(sheet_pil.mode != "RGBA"),
+                    help=t("sheet_ai_bg_help")
+                )
+
+                if apply_ai:
+                    with st.expander(t("advanced_title"), expanded=False):
+                        model_name = st.selectbox(
+                            t("model_label"),
+                            options=["u2net", "isnet-general-use", "silueta", "birefnet-general"],
+                            index=0,
+                            help=t("model_help")
+                        )
+                        alpha_threshold = st.slider(
+                            t("alpha_threshold_label"),
+                            min_value=1,
+                            max_value=250,
+                            value=30,
+                            help=t("alpha_threshold_help")
+                        )
+                        defringe = st.checkbox(
+                            t("defringe_label"),
+                            value=True,
+                            help=t("defringe_help")
+                        )
+                        auto_crop = st.checkbox(
+                            t("autocrop_label"),
+                            value=False,
+                            help=t("autocrop_help")
+                        )
+
+                st.markdown("<br>", unsafe_allow_html=True)
+                process_sheet_btn = st.button(t("process_sheet_button"), use_container_width=True)
+
+                if process_sheet_btn:
+                    prog_bar = st.progress(0, text=t("prog_extract"))
+                    try:
+                        # 1. Slice Sprite Sheet
+                        sliced_raw = slice_sprite_sheet(sheet_pil, columns=cols, rows=rows)
+                        prog_bar.progress(30, text=f"Fatiados {len(sliced_raw)} quadros...")
+
+                        if apply_ai:
+                            session = get_rembg_session(model_name)
+                            def update_progress(current, total, msg):
+                                percent = 30 + int((current / total) * 50)
+                                prog_bar.progress(percent, text=t("prog_segment", current=current, total=total))
+
+                            rgba_frames = process_frames_pipeline(
+                                frames=[f.convert("RGB") for f in sliced_raw],
+                                session=session,
+                                alpha_threshold=alpha_threshold,
+                                defringe=defringe,
+                                auto_crop=auto_crop,
+                                progress_callback=update_progress
+                            )
+                        else:
+                            rgba_frames = [f.convert("RGBA") for f in sliced_raw]
+
+                        prog_bar.progress(85, text=t("prog_gif"))
+                        gif_bytes = compile_transparent_gif(rgba_frames, fps=sheet_fps)
+
+                        prog_bar.progress(95, text=t("prog_sheet"))
+                        sheet_bytes, sheet_meta = compile_sprite_sheet(rgba_frames, layout="horizontal")
+
+                        prog_bar.progress(100, text=t("prog_done"))
+
+                        # Store in session state
+                        st.session_state.gif_bytes = gif_bytes
+                        st.session_state.sheet_bytes = sheet_bytes
+                        st.session_state.sheet_meta = sheet_meta
+                        st.session_state.frames_count = len(rgba_frames)
+                        st.session_state.dimensions = rgba_frames[0].size
+                        st.session_state.rgba_frames = rgba_frames
+                        st.session_state.fps = sheet_fps
+                        st.session_state.pop("cached_trim_key", None)
+                        st.session_state.pop("cached_trimmed_gif", None)
+                        st.session_state.pop("cached_trimmed_sheet", None)
+                        st.toast(t("toast_success"), icon="✅")
+
+                    except Exception as e:
+                        st.error(t("error_processing", error=str(e)))
+
+            except Exception as e:
+                st.error(t("error_reading", error=str(e)))
 
     st.markdown('</div>', unsafe_allow_html=True)
 

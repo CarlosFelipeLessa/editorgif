@@ -68,4 +68,13 @@ Build an end-to-end, game-ready video-to-transparent-GIF processing tool that al
 - [x] Update translations in `ui/i18n.py` (PT-BR and EN-US).
 - [x] Add automated test assertion in `test_pipeline.py` and verify all tests pass.
 
+## Phase 10: Sprite Sheet Input & Conversion (Sprite Sheet para GIF)
+- [x] Implement `slice_sprite_sheet` function in `core/gif_compiler.py` with horizontal strip and grid layout support.
+- [x] Add input media toggle (`🎬 Vídeo / GIF` vs `👾 Sprite Sheet`) in `ui/app.py`.
+- [x] Implement sprite sheet preview, frame dimensions calculation, column/row configuration, and instant GIF compiler.
+- [x] Add optional AI background removal toggle for non-transparent sprite sheets.
+- [x] Add automated pipeline test case `[8/8]` in `test_pipeline.py`.
+- [x] Update documentation in `README.md`, `progress.md`, and `task_plan.md`.
+
+
 
