@@ -55,3 +55,13 @@ Build an end-to-end, game-ready video-to-transparent-GIF processing tool that al
 - [x] Initialize Git repository, commit code.
 - [x] Create remote repository `editorgif` on GitHub via GitHub API.
 - [x] Push to `origin main` and verify remote deployment.
+
+## Phase 7: Post-Transparency Temporal Cropping (Recortar por Segundos)
+- [x] Implement `slice_frames_by_seconds` in `core/gif_compiler.py` with boundary protection.
+- [x] Implement `.gif` input support in `core/video_processor.py`.
+- [x] Implement dynamic trimming UI with dual-thumb time slider and live statistics in `ui/app.py`.
+- [x] Implement interactive preview with tabs for Trimmed vs. Full animation over checkerboard canvas.
+- [x] Add download buttons with timestamped filenames for trimmed GIF and Sprite Sheet.
+- [x] Update translations in `ui/i18n.py` (PT-BR and EN-US).
+- [x] Add automated test step in `test_pipeline.py` and verify all tests pass.
+

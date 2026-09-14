@@ -11,7 +11,7 @@ from PIL import Image
 
 from core.video_processor import extract_frames, get_video_metadata
 from core.bg_remover import get_rembg_session, process_frames_pipeline
-from core.gif_compiler import compile_transparent_gif, compile_sprite_sheet
+from core.gif_compiler import compile_transparent_gif, compile_sprite_sheet, slice_frames_by_seconds
 
 
 def generate_synthetic_video(output_path: str, width: int = 160, height: int = 160, fps: int = 10, num_frames: int = 12):
@@ -89,11 +89,21 @@ def run_pipeline_test():
         assert gif_bytes.startswith(b"GIF89a") or gif_bytes.startswith(b"GIF87a"), "Invalid GIF header."
         print(f"   GIF compiled successfully ({len(gif_bytes)} bytes).")
 
-        print("[5/5] Compiling Sprite Sheet...")
+        print("[5/6] Compiling Sprite Sheet...")
         sheet_bytes, sheet_meta = compile_sprite_sheet(rgba_frames, layout="horizontal")
         assert len(sheet_bytes) > 0, "Sprite sheet returned empty bytes."
         assert sheet_meta["frames"] == 4
         print(f"   Sprite sheet created: {sheet_meta['sheet_width']}x{sheet_meta['sheet_height']} px.")
+
+        print("[6/6] Slicing transparent frames by seconds and compiling trimmed GIF & Sprite Sheet...")
+        sliced, s_idx, e_idx = slice_frames_by_seconds(rgba_frames, fps=8, start_sec=0.1, end_sec=0.3)
+        assert len(sliced) > 0, "Sliced frames list is empty."
+        assert len(sliced) <= len(rgba_frames), "Sliced frames exceeded original count."
+        trimmed_gif = compile_transparent_gif(sliced, fps=8)
+        assert len(trimmed_gif) > 0 and (trimmed_gif.startswith(b"GIF89a") or trimmed_gif.startswith(b"GIF87a")), "Invalid trimmed GIF."
+        trimmed_sheet, trimmed_meta = compile_sprite_sheet(sliced, layout="horizontal")
+        assert len(trimmed_sheet) > 0 and trimmed_meta["frames"] == len(sliced), "Invalid trimmed sprite sheet."
+        print(f"   Trimmed GIF ({len(sliced)} frames, {len(trimmed_gif)} bytes) and sheet ({trimmed_meta['sheet_width']}x{trimmed_meta['sheet_height']}) successfully created.")
 
         print("\n=== ALL PIPELINE TESTS PASSED ===")
 

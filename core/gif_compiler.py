@@ -10,6 +10,56 @@ import numpy as np
 from PIL import Image
 
 
+
+def slice_frames_by_seconds(
+    frames: List[Image.Image],
+    fps: int,
+    start_sec: float,
+    end_sec: float
+) -> Tuple[List[Image.Image], int, int]:
+    """
+    Slices a list of frames according to the requested start and end timestamps in seconds.
+    Ensures safe boundary clipping and guarantees at least one frame is returned.
+
+    Args:
+        frames: List of PIL Images.
+        fps: Frames per second of the animation.
+        start_sec: Desired start time in seconds.
+        end_sec: Desired end time in seconds.
+
+    Returns:
+        Tuple of (sliced_frames, start_index, end_index).
+    """
+    if not frames:
+        raise ValueError("Frames list cannot be empty.")
+    if fps <= 0:
+        fps = 12
+
+    total_frames = len(frames)
+    total_duration = total_frames / float(fps)
+
+    # Sanitize seconds
+    start_sec = max(0.0, min(float(start_sec), total_duration))
+    end_sec = max(0.0, min(float(end_sec), total_duration))
+
+    if end_sec <= start_sec:
+        # Fallback to at least one frame duration ahead
+        end_sec = min(total_duration, start_sec + (1.0 / fps))
+
+    start_idx = int(round(start_sec * fps))
+    start_idx = max(0, min(start_idx, total_frames - 1))
+
+    end_idx = int(round(end_sec * fps))
+    end_idx = max(start_idx + 1, min(end_idx, total_frames))
+
+    sliced = frames[start_idx:end_idx]
+    if not sliced:
+        sliced = [frames[start_idx]]
+        end_idx = start_idx + 1
+
+    return sliced, start_idx, end_idx
+
+
 def _convert_rgba_to_transparent_palette(frame: Image.Image) -> Image.Image:
     """
     Converts an RGBA PIL image to a paletted 'P' image with a dedicated transparent index.

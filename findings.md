@@ -26,3 +26,10 @@
   2. Frame rate sampling: sample at 10-15 FPS (normal for 2D game animations), reducing 180 frames (3s video) down to 30-45 frames.
   3. Pre-create a single `new_session()` for `rembg` to keep the ONNX model in memory across all frames instead of initializing on each frame.
   4. Stream results with `st.progress` to give users live frame-by-frame feedback.
+
+## 4. Post-Transparency Temporal Cropping (Zero AI Latency Slicing)
+- **Problem**: Re-running AI background segmentation whenever a user wants to shorten or trim the animation by a few frames/seconds is prohibitively slow and wastes GPU/CPU cycles.
+- **Solution**: Retain processed RGBA frames (`st.session_state.rgba_frames`) and target FPS in memory.
+- **Slicing**: Slicing the pre-segmented list of PIL RGBA images (`frames[start_idx:end_idx]`) and re-quantizing the paletted GIF via Pillow takes < 0.1s.
+- **Cache-Keying**: Cache compiled bytes keyed by `(start_idx, end_idx, count)` so that UI reruns and download clicks do not redundantly re-quantize the palette.
+

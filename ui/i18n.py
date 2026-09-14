@@ -15,7 +15,7 @@ MESSAGES = {
         "language_select": "Idioma / Language",
         
         "step_1_title": "1. Carregar Vídeo",
-        "upload_label": "Envie o vídeo do personagem (MP4, WebM, MOV, AVI)",
+        "upload_label": "Envie o vídeo ou GIF do personagem (MP4, WebM, MOV, AVI, GIF)",
         "upload_help": "Envie clipes curtos de ações de personagens, ataques, animações paradas ou de caminhada.",
         "video_caption": "ℹ️ Original: {width}x{height} | {duration:.2f}s | {fps:.1f} FPS",
         
@@ -53,10 +53,23 @@ MESSAGES = {
         "meta_frames": "Total de Quadros:",
         "meta_frames_unit": "quadros",
         "meta_size": "Tamanho do Arquivo:",
+        "meta_duration": "Duração Total:",
         "preview_title": "Pré-visualização da Animação Transparente (Fundo Xadrez):",
+        
+        "trim_section_title": "✂️ Recortar GIF por Segundos para Download",
+        "trim_section_help": "Escolha os segundos de início e fim que deseja baixar do GIF transparente sem precisar reprocessar a IA.",
+        "trim_slider_label": "Intervalo de Segundos do Recorte",
+        "trim_stats": "⏱️ Início: {start:.2f}s | Fim: {end:.2f}s | Duração: {duration:.2f}s ({frames} quadros)",
+        "trim_preview_title": "Pré-visualização do Trecho Recortado:",
+        "tab_trimmed": "✂️ Animação Recortada",
+        "tab_full": "🎬 Animação Completa",
         
         "btn_download_gif": "⬇️ Baixar GIF Transparente (.gif)",
         "btn_download_sheet": "⬇️ Baixar Sprite Sheet do Jogo (.png)",
+        "btn_download_trimmed_gif": "⬇️ Baixar GIF Recortado ({start:.2f}s a {end:.2f}s)",
+        "btn_download_trimmed_sheet": "⬇️ Baixar Sprite Sheet Recortado ({frames} quadros)",
+        "btn_download_full_gif": "⬇️ Baixar GIF Completo ({duration:.2f}s)",
+        "btn_download_full_sheet": "⬇️ Baixar Sprite Sheet Completo",
         
         "guide_title": "🎮 Guia de Integração em Game Engines",
         "guide_content": """
@@ -81,7 +94,7 @@ MESSAGES = {
         "language_select": "Language / Idioma",
         
         "step_1_title": "1. Ingest Video",
-        "upload_label": "Upload character video (MP4, WebM, MOV, AVI)",
+        "upload_label": "Upload character video or GIF (MP4, WebM, MOV, AVI, GIF)",
         "upload_help": "Upload short clips of character actions, attacks, idle or walk animations.",
         "video_caption": "ℹ️ Original: {width}x{height} | {duration:.2f}s | {fps:.1f} FPS",
         
@@ -119,10 +132,23 @@ MESSAGES = {
         "meta_frames": "Total Frames:",
         "meta_frames_unit": "frames",
         "meta_size": "File Size:",
+        "meta_duration": "Total Duration:",
         "preview_title": "Transparent Animation Preview (Checkerboard Canvas):",
+        
+        "trim_section_title": "✂️ Trim GIF by Seconds for Download",
+        "trim_section_help": "Choose the start and end seconds you want to download from the transparent GIF without re-running AI processing.",
+        "trim_slider_label": "Trim Interval (seconds)",
+        "trim_stats": "⏱️ Start: {start:.2f}s | End: {end:.2f}s | Duration: {duration:.2f}s ({frames} frames)",
+        "trim_preview_title": "Trimmed GIF Preview:",
+        "tab_trimmed": "✂️ Trimmed Animation",
+        "tab_full": "🎬 Full Animation",
         
         "btn_download_gif": "⬇️ Download Transparent GIF (.gif)",
         "btn_download_sheet": "⬇️ Download Game Sprite Sheet (.png)",
+        "btn_download_trimmed_gif": "⬇️ Download Trimmed GIF ({start:.2f}s to {end:.2f}s)",
+        "btn_download_trimmed_sheet": "⬇️ Download Trimmed Sprite Sheet ({frames} frames)",
+        "btn_download_full_gif": "⬇️ Download Full GIF ({duration:.2f}s)",
+        "btn_download_full_sheet": "⬇️ Download Full Sprite Sheet",
         
         "guide_title": "🎮 Game Engine Integration Guide",
         "guide_content": """

@@ -9,4 +9,6 @@
 | 2026-09-13 | Phase 4 | Completed | Implemented UI (`ui/styles.py`, `ui/app.py`) with cyber theme, checkerboard preview, and instant downloads. |
 | 2026-09-13 | Phase 5 | Completed | Executed automated end-to-end test (`test_pipeline.py`). Successfully downloaded ONNX model, performed AI segmentation, generated transparent GIF and sprite sheet. |
 | 2026-09-14 | Phase 6 | Completed | Renamed project to `EditorGIF` across all modules/docs, added `.gitignore`, initialized git repository, created remote repo `CarlosFelipeLessa/editorgif` on GitHub, and successfully pushed code. |
+| 2026-09-14 | Phase 7 | Completed | Added post-transparency temporal cropping (recortar GIF por segundos). Implemented `slice_frames_by_seconds`, `.gif` file ingestion, dual-thumb time slider, tabs for trimmed and full preview on checkerboard, and timestamped download buttons. Verified via `test_pipeline.py`. |
+
 
