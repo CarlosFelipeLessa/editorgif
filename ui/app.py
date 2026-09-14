@@ -82,15 +82,19 @@ def t(key: str, **kwargs) -> str:
 
 # Header Section
 st.markdown(f"""
-<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+<div class="hero-container">
     <div>
+        <div class="hero-badge">
+            <span class="hero-badge-dot"></span>
+            <span>AI SPRITE ENGINE v1.1</span>
+        </div>
         <div class="hero-title">{t('hero_title')}</div>
         <div class="hero-subtitle">{t('hero_subtitle')}</div>
     </div>
-    <div style="margin-bottom: 1rem;">
-        <span class="badge-tech">{t('badge_onnx')}</span>
-        <span class="badge-tech">{t('badge_ghost')}</span>
-        <span class="badge-tech">{t('badge_defringe')}</span>
+    <div class="hero-badges-wrapper">
+        <span class="badge-tech"><span class="badge-dot dot-cyan"></span>{t('badge_onnx')}</span>
+        <span class="badge-tech"><span class="badge-dot dot-purple"></span>{t('badge_ghost')}</span>
+        <span class="badge-tech"><span class="badge-dot dot-emerald"></span>{t('badge_defringe')}</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -279,22 +283,22 @@ with col_right:
         total_duration = max(0.01, frames_count / float(fps))
 
         st.markdown(f"""
-        <div style="display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
-            <div style="background: rgba(255,255,255,0.05); padding: 8px 14px; border-radius: 8px;">
-                <span style="color:#94a3b8; font-size: 0.8rem;">{t('meta_res')}</span><br>
-                <b>{dim_w} x {dim_h} px</b>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">{t('meta_res')}</div>
+                <div class="stat-value">{dim_w} × {dim_h} px</div>
             </div>
-            <div style="background: rgba(255,255,255,0.05); padding: 8px 14px; border-radius: 8px;">
-                <span style="color:#94a3b8; font-size: 0.8rem;">{t('meta_frames')}</span><br>
-                <b>{frames_count} {t('meta_frames_unit')}</b>
+            <div class="stat-card">
+                <div class="stat-label">{t('meta_frames')}</div>
+                <div class="stat-value">{frames_count} {t('meta_frames_unit')}</div>
             </div>
-            <div style="background: rgba(255,255,255,0.05); padding: 8px 14px; border-radius: 8px;">
-                <span style="color:#94a3b8; font-size: 0.8rem;">{t('meta_duration')}</span><br>
-                <b>{total_duration:.2f} s (@ {fps} FPS)</b>
+            <div class="stat-card">
+                <div class="stat-label">{t('meta_duration')}</div>
+                <div class="stat-value">{total_duration:.2f}s <span class="stat-sub">@{fps}fps</span></div>
             </div>
-            <div style="background: rgba(255,255,255,0.05); padding: 8px 14px; border-radius: 8px;">
-                <span style="color:#94a3b8; font-size: 0.8rem;">{t('meta_size')}</span><br>
-                <b>{gif_size_kb:.1f} KB</b>
+            <div class="stat-card">
+                <div class="stat-label">{t('meta_size')}</div>
+                <div class="stat-value">{gif_size_kb:.1f} KB</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -347,8 +351,15 @@ with col_right:
             st.markdown(f"<b>{t('trim_preview_title')}</b>", unsafe_allow_html=True)
             b64_active_gif = base64.b64encode(active_gif_bytes).decode("utf-8")
             st.markdown(f"""
-            <div class="checkerboard-box">
-                <img src="data:image/gif;base64,{b64_active_gif}" style="max-width: 100%; max-height: 320px; object-fit: contain; image-rendering: auto;" alt="Trimmed Transparent Preview" />
+            <div class="checkerboard-viewport">
+                <div class="viewport-header">
+                    <span class="viewport-dots"><span class="v-dot v-red"></span><span class="v-dot v-yellow"></span><span class="v-dot v-green"></span></span>
+                    <span class="viewport-title">CHECKERBOARD VIEWPORT • RECORTE ATIVO</span>
+                    <span class="viewport-status">TRIMMED</span>
+                </div>
+                <div class="checkerboard-box">
+                    <img src="data:image/gif;base64,{b64_active_gif}" style="max-width: 100%; max-height: 320px; object-fit: contain; image-rendering: auto;" alt="Trimmed Transparent Preview" />
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -389,8 +400,15 @@ with col_right:
             st.markdown(f"<b>{t('preview_title')}</b>", unsafe_allow_html=True)
             b64_full_gif = base64.b64encode(st.session_state.gif_bytes).decode("utf-8")
             st.markdown(f"""
-            <div class="checkerboard-box">
-                <img src="data:image/gif;base64,{b64_full_gif}" style="max-width: 100%; max-height: 320px; object-fit: contain; image-rendering: auto;" alt="Full Transparent Preview" />
+            <div class="checkerboard-viewport">
+                <div class="viewport-header">
+                    <span class="viewport-dots"><span class="v-dot v-red"></span><span class="v-dot v-yellow"></span><span class="v-dot v-green"></span></span>
+                    <span class="viewport-title">CHECKERBOARD VIEWPORT • ANIMAÇÃO COMPLETA</span>
+                    <span class="viewport-status">ORIGINAL</span>
+                </div>
+                <div class="checkerboard-box">
+                    <img src="data:image/gif;base64,{b64_full_gif}" style="max-width: 100%; max-height: 320px; object-fit: contain; image-rendering: auto;" alt="Full Transparent Preview" />
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -415,9 +433,16 @@ with col_right:
 
     else:
         st.markdown(f"""
-        <div class="checkerboard-box" style="color: #64748b; text-align: center;">
-            <div style="font-size: 2.5rem; margin-bottom: 8px;">🕹️</div>
-            <div>{t('empty_preview')}</div>
+        <div class="checkerboard-viewport">
+            <div class="viewport-header">
+                <span class="viewport-dots"><span class="v-dot v-red"></span><span class="v-dot v-yellow"></span><span class="v-dot v-green"></span></span>
+                <span class="viewport-title">CHECKERBOARD VIEWPORT</span>
+                <span class="viewport-status">WAITING</span>
+            </div>
+            <div class="checkerboard-box empty-box">
+                <div class="empty-icon">👾</div>
+                <div class="empty-text">{t('empty_preview')}</div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
